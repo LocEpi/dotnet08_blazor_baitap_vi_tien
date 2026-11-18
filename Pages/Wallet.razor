@@ -1,0 +1,223 @@
+@page "/wallet"
+@using dotnet08_blazor_baitap_vi_tien.Models
+@using dotnet08_blazor_baitap_vi_tien.Services
+@inject WalletStateService WalletState
+@implements IDisposable
+
+<PageTitle>My Wallet | Quản lý ví điện tử</PageTitle>
+
+<div class="wallet-page">
+    <div class="wallet-shell">
+        <header class="wallet-page-header">
+            <div>
+                <div class="wallet-kicker">PERSONAL FINANCE</div>
+                <h1>Quản lý ví điện tử</h1>
+                <p>Theo dõi số dư và quản lý các giao dịch của bạn.</p>
+            </div>
+            <div class="wallet-header-mark"><span>₫</span></div>
+        </header>
+
+        <div class="wallet-dashboard">
+            <section class="wallet-main-card">
+                <WalletHeader />
+
+                <div class="wallet-actions">
+                    <button type="button" class="wallet-action wallet-action--deposit" @onclick="() => OpenModal(TransactionMode.Deposit)">
+                        <span class="wallet-action__icon">＋</span>
+                        <span>Nạp tiền</span>
+                    </button>
+                    <button type="button" class="wallet-action wallet-action--withdraw" @onclick="() => OpenModal(TransactionMode.Withdraw)">
+                        <span class="wallet-action__icon">−</span>
+                        <span>Rút tiền</span>
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(StatusMessage))
+                {
+                    <div class="wallet-feedback @(StatusIsSuccess ? "wallet-feedback--success" : "wallet-feedback--error")" role="status">
+                        <span>@(StatusIsSuccess ? "✓" : "！")</span>
+                        @StatusMessage
+                        <button type="button" aria-label="Đóng thông báo" @onclick="ClearStatus">×</button>
+                    </div>
+                }
+            </section>
+
+            <section class="wallet-history-card">
+                <div class="wallet-section-heading">
+                    <div>
+                        <div class="wallet-kicker">ACTIVITY</div>
+                        <h2>Lịch sử giao dịch</h2>
+                    </div>
+                    <span class="wallet-count">@WalletState.Transactions.Count giao dịch</span>
+                </div>
+
+                @if (WalletState.Transactions.Count == 0)
+                {
+                    <div class="wallet-empty">
+                        <div class="wallet-empty__icon">↔</div>
+                        <strong>Chưa có giao dịch</strong>
+                        <span>Các giao dịch nạp và rút tiền sẽ xuất hiện tại đây.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="wallet-table-wrap">
+                        <table class="wallet-table">
+                            <thead>
+                                <tr>
+                                    <th>Giao dịch</th>
+                                    <th>Thời gian</th>
+                                    <th class="text-end">Số tiền</th>
+                                    <th class="text-end">Số dư sau GD</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in WalletState.Transactions)
+                                {
+                                    var isDeposit = item.Type == "Nạp tiền";
+                                    <tr @key="item.Id">
+                                        <td>
+                                            <div class="wallet-transaction-type">
+                                                <span class="wallet-transaction-icon @(isDeposit ? "is-deposit" : "is-withdraw")">@(isDeposit ? "↙" : "↗")</span>
+                                                <span>
+                                                    <strong>@item.Type</strong>
+                                                    <small>@(isDeposit ? "Tiền vào ví" : "Tiền ra khỏi ví")</small>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="wallet-date">@item.CreatedAt.ToString("dd/MM/yyyy · HH:mm")</td>
+                                        <td class="text-end">
+                                            <strong class="wallet-amount @(isDeposit ? "text-deposit" : "text-withdraw")">
+                                                @(isDeposit ? "+" : "−")@item.Amount.ToString("N0") ₫
+                                            </strong>
+                                        </td>
+                                        <td class="text-end wallet-balance-cell">@item.BalanceAfter.ToString("N0") ₫</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="wallet-mobile-hint">Vuốt ngang để xem đầy đủ lịch sử giao dịch.</div>
+                }
+            </section>
+        </div>
+        <footer class="wallet-footer">MY WALLET <span>•</span> Quản lý tài chính cá nhân đơn giản và an toàn</footer>
+    </div>
+</div>
+
+@if (IsModalOpen)
+{
+    <div class="wallet-modal-backdrop" role="presentation" @onclick="CloseModal">
+        <section class="wallet-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title" @onclick:stopPropagation="true">
+            <header class="wallet-modal__header">
+                <div class="wallet-modal__heading">
+                    <span class="wallet-modal__icon @(CurrentMode == TransactionMode.Deposit ? "is-deposit" : "is-withdraw")">
+                        @(CurrentMode == TransactionMode.Deposit ? "＋" : "−")
+                    </span>
+                    <div>
+                        <h2 id="wallet-modal-title">@(CurrentMode == TransactionMode.Deposit ? "Nạp tiền vào ví" : "Rút tiền từ ví")</h2>
+                        <p>@(CurrentMode == TransactionMode.Deposit ? "Nhập số tiền bạn muốn thêm vào ví." : "Nhập số tiền bạn muốn rút khỏi ví.")</p>
+                    </div>
+                </div>
+                <button type="button" class="wallet-modal__close" aria-label="Đóng" @onclick="CloseModal">×</button>
+            </header>
+
+            <div class="wallet-modal__body">
+                <div class="wallet-modal-balance">
+                    <span>Số dư hiện tại</span>
+                    <strong>@WalletState.Balance.ToString("N0") ₫</strong>
+                </div>
+
+                <EditForm Model="InputModel" OnValidSubmit="SubmitTransaction">
+                    <DataAnnotationsValidator />
+                    <label class="wallet-input-label" for="transaction-amount">Số tiền giao dịch <span>*</span></label>
+                    <div class="wallet-input-group">
+                        <InputNumber id="transaction-amount" class="form-control wallet-amount-input"
+                                     @bind-Value="InputModel.Amount" min="0.01" step="1000"
+                                     placeholder="Ví dụ: 100000" />
+                        <span>VNĐ</span>
+                    </div>
+                    <ValidationMessage For="@(() => InputModel.Amount)" />
+                    <div class="wallet-quick-amounts">
+                        <span>Gợi ý:</span>
+                        @foreach (var amount in QuickAmounts)
+                        {
+                            <button type="button" @onclick="() => SetAmount(amount)">@amount.ToString("N0")</button>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(ModalError))
+                    {
+                        <div class="wallet-modal-error" role="alert">@ModalError</div>
+                    }
+
+                    <div class="wallet-modal__actions">
+                        <button type="button" class="wallet-button wallet-button--cancel" @onclick="CloseModal">Hủy</button>
+                        <button type="submit" class="wallet-button @(CurrentMode == TransactionMode.Deposit ? "wallet-button--deposit" : "wallet-button--withdraw")">
+                            @(CurrentMode == TransactionMode.Deposit ? "Xác nhận nạp tiền" : "Xác nhận rút tiền")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    private enum TransactionMode { Deposit, Withdraw }
+
+    private readonly decimal[] QuickAmounts = { 100_000m, 200_000m, 500_000m, 1_000_000m };
+    private WalletTransactionInput InputModel = new();
+    private TransactionMode CurrentMode;
+    private bool IsModalOpen;
+    private string ModalError = string.Empty;
+    private string StatusMessage = string.Empty;
+    private bool StatusIsSuccess;
+
+    protected override void OnInitialized()
+    {
+        WalletState.OnChange += HandleStateChanged;
+    }
+
+    private void HandleStateChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OpenModal(TransactionMode mode)
+    {
+        CurrentMode = mode;
+        InputModel = new WalletTransactionInput();
+        ModalError = string.Empty;
+        IsModalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        IsModalOpen = false;
+        ModalError = string.Empty;
+    }
+
+    private void SetAmount(decimal amount) => InputModel.Amount = amount;
+
+    private void SubmitTransaction()
+    {
+        if (InputModel.Amount is not decimal amount)
+            return;
+
+        var result = CurrentMode == TransactionMode.Deposit
+            ? WalletState.Deposit(amount)
+            : WalletState.Withdraw(amount);
+
+        if (!result.IsSuccess)
+        {
+            ModalError = result.Message;
+            return;
+        }
+
+        StatusIsSuccess = true;
+        StatusMessage = result.Message;
+        CloseModal();
+    }
+
+    private void ClearStatus() => StatusMessage = string.Empty;
+
+    public void Dispose() => WalletState.OnChange -= HandleStateChanged;
+}

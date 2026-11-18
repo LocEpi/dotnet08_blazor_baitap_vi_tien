@@ -1,0 +1,19 @@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(CVTemplate)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+
+    <NotFound>
+        <PageTitle>Không tìm thấy trang</PageTitle>
+        <LayoutView Layout="@typeof(CVTemplate)">
+            <section class="resume-section">
+                <div class="resume-section-content">
+                    <h1 class="mb-3">Không tìm thấy trang</h1>
+                    <p>Đường dẫn bạn truy cập không tồn tại.</p>
+                    <a href="/">Quay về trang chủ</a>
+                </div>
+            </section>
+        </LayoutView>
+    </NotFound>
+</Router>

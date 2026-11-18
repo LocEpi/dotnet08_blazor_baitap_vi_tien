@@ -1,0 +1,35 @@
+@using dotnet08_blazor_baitap_vi_tien.Services
+@inject WalletStateService WalletState
+@implements IDisposable
+
+<section class="wallet-summary" aria-live="polite">
+    <div class="wallet-summary__eyebrow">MY WALLET</div>
+    <div class="wallet-summary__label">Số dư hiện tại</div>
+    <div class="wallet-summary__balance">@WalletState.Balance.ToString("N0") <span>₫</span></div>
+    <div class="wallet-summary__owner">
+        <span class="wallet-avatar">@GetInitials(WalletState.OwnerName)</span>
+        <span>Xin chào, <strong>@WalletState.OwnerName</strong></span>
+    </div>
+</section>
+
+@code {
+    protected override void OnInitialized()
+    {
+        WalletState.OnChange += HandleStateChanged;
+    }
+
+    private void HandleStateChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private static string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch
+        {
+            0 => "W",
+            1 => parts[0][..1].ToUpperInvariant(),
+            _ => $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant()
+        };
+    }
+
+    public void Dispose() => WalletState.OnChange -= HandleStateChanged;
+}

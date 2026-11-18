@@ -1,0 +1,87 @@
+
+# ==========================================
+# .NET / ASP.NET Core Build Output
+# ==========================================
+**/bin/
+**/obj/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+publish/
+
+# ==========================================
+# Visual Studio
+# ==========================================
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ==========================================
+# IDE
+# ==========================================
+.idea/
+.vscode/
+
+# ==========================================
+# Visual Studio Cache / Logs
+# ==========================================
+*.cache
+*.log
+
+# ==========================================
+# Test Results
+# ==========================================
+TestResults/
+[Bb]uild[Ll]og.*
+
+# ==========================================
+# NuGet
+# ==========================================
+*.nupkg
+*.snupkg
+
+# ==========================================
+# ASP.NET Core / Static Libraries
+# ==========================================
+wwwroot/lib/
+
+# ==========================================
+# Temporary Files
+# ==========================================
+*.tmp
+*.temp
+*.bak
+
+# ==========================================
+# Environment / Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.local.json
+secrets.json
+*.publishsettings
+
+# Publish profiles may contain credentials
+Properties/PublishProfiles/*.pubxml
+
+# Private certificates and keys
+*.pfx
+*.p12
+*.key
+
+# ==========================================
+# Node.js (if used)
+# ==========================================
+node_modules/
+
+# ==========================================
+# OS Files
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini

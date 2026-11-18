@@ -1,0 +1,6 @@
+@dotnet08_blazor_baitap_vi_tien_HostAddress = http://localhost:5135
+
+GET {{dotnet08_blazor_baitap_vi_tien_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
